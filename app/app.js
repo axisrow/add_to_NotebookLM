@@ -129,8 +129,12 @@ async function loadNotebooks() {
 
     if (response.error) {
       const loginText = I18n ? I18n.get('popup_loginRequired') : 'Login to NotebookLM first';
-      notebookSelect.innerHTML = `<option value="">${loginText}</option>`;
-      showStatus('error', response.error);
+      notebookSelect.innerHTML = '';
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = loginText;
+      notebookSelect.appendChild(option);
+      showStatus('error', escapeHtml(response.error));
       return;
     }
 
@@ -143,21 +147,30 @@ async function loadNotebooks() {
     // Populate select
     if (notebooks.length === 0) {
       const noNotebooksText = I18n ? I18n.get('popup_noNotebooks') : 'No notebooks found';
-      notebookSelect.innerHTML = `<option value="">${noNotebooksText}</option>`;
+      notebookSelect.innerHTML = '';
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = noNotebooksText;
+      notebookSelect.appendChild(option);
     } else {
       const sourcesText = I18n ? I18n.get('common_sources') : 'sources';
-      notebookSelect.innerHTML = notebooks.map(nb => `
-        <option value="${nb.id}" ${nb.id === lastNotebook ? 'selected' : ''}>
-          ${nb.emoji} ${nb.name} (${nb.sources} ${sourcesText})
-        </option>
-      `).join('');
+      notebookSelect.innerHTML = '';
+      notebooks.forEach(nb => {
+        const option = document.createElement('option');
+        option.value = nb.id;
+        option.textContent = `${nb.emoji} ${nb.name} (${nb.sources} ${sourcesText})`;
+        if (nb.id === lastNotebook) {
+          option.selected = true;
+        }
+        notebookSelect.appendChild(option);
+      });
     }
 
     updateImportButtons();
 
   } catch (error) {
     const errorText = I18n ? I18n.get('popup_error') : 'Failed to load notebooks';
-    showStatus('error', errorText);
+    showStatus('error', escapeHtml(errorText));
   }
 }
 
@@ -309,9 +322,9 @@ async function handleNewNotebook() {
     });
 
     if (response.error) {
-      showStatus('error', response.error);
+      showStatus('error', escapeHtml(response.error));
     } else {
-      showStatus('success', `✓ ${name}`);
+      showStatus('success', `✓ ${escapeHtml(name)}`);
       await loadNotebooks();
       notebookSelect.value = response.notebook.id;
       updateImportButtons();
@@ -319,7 +332,7 @@ async function handleNewNotebook() {
 
   } catch (error) {
     const errorText = I18n ? I18n.get('popup_error') : 'Failed to create notebook';
-    showStatus('error', errorText);
+    showStatus('error', escapeHtml(errorText));
   } finally {
     newNotebookBtn.disabled = false;
     const createText = I18n ? I18n.get('bulk_createNewNotebook') : 'Create New Notebook';
@@ -400,8 +413,8 @@ async function importUrls(notebookId, urls) {
     if (failed === 0) {
       const successText = I18n ? I18n.get('popup_success') : 'Successfully imported!';
       showStatus('success', `
-        ✓ ${successText} (${imported})
-        <br><a href="${notebookUrl}" target="_blank">${openText} →</a>
+        ✓ ${escapeHtml(successText)} (${imported})
+        <br><a href="${escapeHtml(notebookUrl)}" target="_blank">${escapeHtml(openText)} →</a>
       `);
 
       // Clear inputs
@@ -415,11 +428,11 @@ async function importUrls(notebookId, urls) {
     } else if (imported > 0) {
       showStatus('info', `
         ${imported} OK, ${failed} failed.
-        <br><a href="${notebookUrl}" target="_blank">${openText} →</a>
+        <br><a href="${escapeHtml(notebookUrl)}" target="_blank">${escapeHtml(openText)} →</a>
       `);
     } else {
       const errorText = I18n ? I18n.get('popup_error') : 'Failed to import items. Please try again.';
-      showStatus('error', errorText);
+      showStatus('error', escapeHtml(errorText));
     }
 
     // Reload notebooks to update source counts
@@ -428,7 +441,7 @@ async function importUrls(notebookId, urls) {
   } catch (error) {
     hideProgress();
     const errorText = I18n ? I18n.get('popup_error') : 'Import failed';
-    showStatus('error', errorText + ': ' + error.message);
+    showStatus('error', escapeHtml(errorText) + ': ' + escapeHtml(error.message));
   } finally {
     updateImportButtons();
   }

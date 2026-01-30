@@ -61,6 +61,13 @@ function t(key, fallback) {
   return fallback || key;
 }
 
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // Load current tab info
 async function loadCurrentTab() {
   try {
@@ -97,7 +104,7 @@ function detectYouTubePageType(url) {
     const playlistText = t('popup_addPlaylist', 'Add Playlist to Notebook');
     addBtn.innerHTML = `<span>📋</span> ${playlistText}`;
     const playlistLabel = t('popup_playlist', 'Playlist');
-    currentUrlDiv.innerHTML = `📋 <strong>${playlistLabel}:</strong> ${currentTab.title.replace(' - YouTube', '')}`;
+    currentUrlDiv.innerHTML = `📋 <strong>${escapeHtml(playlistLabel)}:</strong> ${escapeHtml(currentTab.title.replace(' - YouTube', ''))}`;
   } else if (url.includes('/watch') && hasPlaylistParam) {
     // Watching a video from a playlist
     youtubePageType = 'playlist_video';
@@ -116,7 +123,7 @@ function detectYouTubePageType(url) {
     const addChannelText = t('popup_addChannelVideos', 'Add Channel Videos to Notebook');
     addBtn.innerHTML = `<span>📺</span> ${addChannelText}`;
     const channelLabel = t('popup_channel', 'Channel');
-    currentUrlDiv.innerHTML = `📺 <strong>${channelLabel}:</strong> ${currentTab.title.replace(' - YouTube', '')}`;
+    currentUrlDiv.innerHTML = `📺 <strong>${escapeHtml(channelLabel)}:</strong> ${escapeHtml(currentTab.title.replace(' - YouTube', ''))}`;
   }
 }
 
@@ -190,6 +197,7 @@ async function loadNotebooks() {
       notebooks.forEach(nb => {
         const option = document.createElement('option');
         option.value = nb.id;
+        // Using textContent is safe - no need to escape
         option.textContent = `${nb.emoji} ${nb.name} (${nb.sources} ${sourcesText})`;
         if (nb.id === lastNotebook) {
           option.selected = true;
@@ -385,10 +393,10 @@ function showSuccessWithActions(notebook, videoCount = null) {
 
   statusDiv.className = 'status success';
   statusDiv.innerHTML = `
-    <div>✓ ${addedToText} "${notebook.emoji} ${notebook.name}"</div>
+    <div>✓ ${escapeHtml(addedToText)} "${escapeHtml(notebook.emoji)} ${escapeHtml(notebook.name)}"</div>
     <div class="success-actions">
       <button class="btn btn-secondary" id="open-notebook-btn">
-        ${openNotebookText}
+        ${escapeHtml(openNotebookText)}
       </button>
     </div>
   `;
